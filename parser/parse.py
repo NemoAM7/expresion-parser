@@ -1,3 +1,5 @@
+from stack import Stack
+
 class Parser:
     def __init__(self):
         self.operatorDict = {
@@ -28,20 +30,45 @@ class Parser:
             outexp += operatorStack.pop()
         return outexp
 
-    def parseExpresion(self, expresion, input_ = "infix", output = "postfix"):
-        if input_ == "infix" and output == "postfix":
-            return self.forwardparseExpresion(expresion)
-        elif input_ == "infix" and output == "prefix":
-            return self.forwardparseExpresion(self.reverseexp(expresion))[::-1]
+    def backwardparseExpresion(self, expresion):
+        valueStack = Stack()
+        outexp = ""
 
-    def reverseexp(self, expresion):
+        for character in expresion:
+            if character in self.operatorDict:
+                b = valueStack.pop()
+                a = valueStack.pop()
+                valueStack.push("("+a+character+b+")")
+            else:
+                valueStack.push(character)
+        
+        return valueStack.pop()
+
+    def parseExpresion(self, expresion, output = "postfix"):
+        if (expresion[0] not in self.operatorDict and expresion[-1] not in self.operatorDict):
+            if output == "postfix":
+                return self.forwardparseExpresion(expresion)
+            if output == "prefix":
+                return self.forwardparseExpresion(self.reverseExpresion(expresion))[::-1]
+        if expresion[-1] in self.operatorDict:
+            if output == "infix":
+                return self.backwardparseExpresion(expresion)
+            if output == "prefix":
+                return self.parseExpresion(self.backwardparseExpresion(expresion), output = "prefix")
+        if expresion[0] in self.operatorDict:
+            if output == "infix":
+                return self.reverseExpresion(self.backwardparseExpresion(expresion[::-1]))
+            if output == "postfix":
+                return self.forwardparseExpresion(self.parseExpresion(expresion, output = "infix"))
+
+    def reverseExpresion(self, expresion):
         if not expresion:
             return ""
         if expresion[-1] == "(":
-            return ")" + self.reverseexp(expresion[:-1])
+            return ")" + self.reverseExpresion(expresion[:-1])
         if expresion[-1] == ")":
-            return "(" + self.reverseexp(expresion[:-1])
-        return expresion[-1] +self.reverseexp(expresion[:-1])
+            return "(" + self.reverseExpresion(expresion[:-1])
+        return expresion[-1] +self.reverseExpresion(expresion[:-1])
 
     def pushop(self, stack: Stack, operator):
         if stack.len == 0:
@@ -55,5 +82,3 @@ class Parser:
             return ""
         else:
             return stack.pop()+self.pushop(stack, operator) 
-
-
